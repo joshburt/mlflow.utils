@@ -7,9 +7,9 @@ from mlflow.entities import Experiment, Run
 from mlflow.entities.model_registry import ModelVersion
 from mlflow.store.entities import PagedList
 
+from ..common.config.environment import demand_env_var_as_int
 from ..dto.base_model import BaseModel
-
-MAX_RUN_AGE: timedelta = timedelta(days=1)
+from ..dto.tracking.pruneable import Pruneable
 
 
 class AnacondaMlFlowClient(BaseModel):
@@ -62,8 +62,9 @@ class AnacondaMlFlowClient(BaseModel):
 
         return model_version
 
-    def get_prunable_runs(self, runs: list[Run]) -> list[dict]:
-        prunables: list[dict] = []
+    def get_prunable_runs(self, runs: list[Run]) -> list[Pruneable]:
+        prunables: list[Pruneable] = []
+
         for run in runs:
             if run.info.end_time:
                 run_id: str = run.info.run_id
@@ -71,26 +72,51 @@ class AnacondaMlFlowClient(BaseModel):
                 run_end_time: int = run.info.end_time / 1000
                 run_end_time_dt: datetime = datetime.fromtimestamp(run_end_time)
 
-                model_meta = json.loads(run.data.tags["mlflow.log-model.history"])[0]
-                model_run_id: str = model_meta["run_id"]
+                proto_pruneable: dict = {}
 
-                # Prunable runs
-                MAX_AGE_TIME: datetime = datetime.utcnow() - MAX_RUN_AGE
-                if run_end_time_dt < MAX_AGE_TIME:
-                    model: Union[ModelVersion, None] = self.get_prunable_model(run_id=model_run_id)
-                    if model:
-                        # At this point both the run and model are prunable.
-                        prunable: dict = {
-                            "experiment_run_id": run_id,
-                            "model": {"name": model.name, "version": model.version},
-                        }
-                        prunables.append(prunable)
+                if "mlflow.log-model.history" in run.data.tags:
+                    model_meta = json.loads(run.data.tags["mlflow.log-model.history"])[0]
+                    model_run_id: str = model_meta["run_id"]
+
+                    # Pruneable runs
+                    oldest_allowed_date: datetime = datetime.utcnow() - timedelta(
+                        days=demand_env_var_as_int(name="MLFLOW_TRACKING_ENTITY_TTL")
+                    )
+                    if run_end_time_dt < oldest_allowed_date:
+                        proto_pruneable["run"] = {"run_id": run_id}
+                        model: Union[ModelVersion, None] = self.get_prunable_model(run_id=model_run_id)
+                        if model:
+                            proto_pruneable["model"] = {"name": model.name, "version": model.version}
+
+                prunables.append(Pruneable.parse_obj(proto_pruneable))
         return prunables
 
-    def prune(self) -> None:
+    def delete_model_version(self, name: str, version: str, dry_run: bool = False) -> None:
+        if dry_run:
+            print(f"[Dry Run] Delete model version, name: {name}, version: {version}")
+        else:
+            print(f"Deleting model version, name: {name}, version: {version} ..")
+            self.client.delete_model_version(name=name, version=version)
+
+    def delete_run(self, id: str, dry_run: bool = False) -> None:
+        if dry_run:
+            print(f"[Dry Run] Delete experiment run, id: {id}")
+        else:
+            print(f"Deleting experiment run, id: {id} ..")
+            self.client.delete_run(run_id=id)
+
+    def get_pruneables(self) -> list[Pruneable]:
         experiments: list[Experiment] = self.get_experiments()
+        pruneables: list[Pruneable] = []
         for experiment in experiments:
             print(f"Reviewing experiment {experiment.experiment_id}")
             runs: list[Run] = self.get_experiment_runs(experiment_id=experiment.experiment_id)
-            prunables = self.get_prunable_runs(runs=runs)
-            print(prunables)
+            pruneables = pruneables + self.get_prunable_runs(runs=runs)
+        return pruneables
+
+    def prune(self, pruneables: list[Pruneable], dry_run: bool = False) -> None:
+        for pruneable in pruneables:
+            if pruneable.model:
+                self.delete_model_version(name=pruneable.model.name, version=pruneable.model.version, dry_run=dry_run)
+            if pruneable.run:
+                self.delete_run(id=pruneable.run.run_id, dry_run=dry_run)
