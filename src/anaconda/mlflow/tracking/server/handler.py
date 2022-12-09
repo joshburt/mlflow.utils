@@ -4,22 +4,9 @@ import sys
 from argparse import ArgumentParser
 
 
-def shell_out(shell_out_cmd: str) -> tuple[str, str, int]:
-    args = shlex.split(shell_out_cmd)
-    proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-    try:
-        outs, errs = proc.communicate(timeout=None)
-    except subprocess.TimeoutExpired:
-        proc.kill()
-        outs, errs = proc.communicate()
-    return outs.decode(encoding="utf-8"), errs.decode(encoding="utf-8"), proc.returncode
-
-
 def launch(shell_out_cmd: str) -> None:
     args = shlex.split(shell_out_cmd)
     proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    # proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     for line in proc.stdout:
         sys.stdout.buffer.write(line)
 
