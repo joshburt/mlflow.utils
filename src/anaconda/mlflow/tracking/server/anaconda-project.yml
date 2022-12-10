@@ -22,6 +22,7 @@ commands:
 
 packages:
     - python=3.9
+    - python-dotenv=0.21.0
     - pip:
         - mlflow==1.2.0
 
