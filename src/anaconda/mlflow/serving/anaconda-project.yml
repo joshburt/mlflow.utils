@@ -1,5 +1,5 @@
-name: mlflow-endpoint-poc
-description: MLFlow Endpoint POC
+name: mlflow-endpoint
+description: MLFlow Endpoint
 
 commands:
   Staging:
@@ -12,7 +12,7 @@ commands:
 packages:
     - python=3.9
     - pip:
-        - mlflow
+        - mlflow==1.2.0
 
 platforms:
   - linux-64
