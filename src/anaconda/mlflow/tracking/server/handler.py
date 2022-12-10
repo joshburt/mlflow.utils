@@ -3,12 +3,27 @@ import subprocess
 import sys
 from argparse import ArgumentParser
 
+from dotenv import load_dotenv
+
 
 def launch(shell_out_cmd: str) -> None:
     args = shlex.split(shell_out_cmd)
     proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     for line in proc.stdout:
         sys.stdout.buffer.write(line)
+
+
+def get_config_for_stage(stage_name: str) -> str:
+    lower_name: str = stage_name.lower()
+    if lower_name == "local":
+        return "env/.env.local.tracking.server"
+    if lower_name == "staging":
+        return "env/.env.staging.tracking.server"
+    if lower_name == "production":
+        return "env/.env.production.tracking.server"
+
+    exp_message: str = f"Unknown stage {stage_name} received"
+    raise Exception(exp_message)
 
 
 if __name__ == "__main__":
@@ -38,12 +53,16 @@ if __name__ == "__main__":
         help="IP address the application should listen on.",
     )
 
+    parser.add_argument("--stage", action="store", help="The stage of the deployment")
+
     args = parser.parse_args(sys.argv[1:])
 
     print(args)
 
-    # execution command /  --timeout 0
     # https://www.mlflow.org/docs/latest/cli.html#mlflow-server
+
+    # load defined environmental variables
+    load_dotenv(dotenv_path=get_config_for_stage(stage_name=args.stage))
 
     cmd: str = (
         f"mlflow server --serve-artifacts --port {args.anaconda_project_port} --host {args.anaconda_project_address}"

@@ -2,9 +2,14 @@ name: mlflow-endpoint-taxi_fare_regressor
 description: MLFlow Endpoint taxi_fare_regressor
 
 commands:
+  Local:
+    unix: python -m handler --model taxi_fare_regressor --stage Local
+    supports_http_options: true
+
   Staging:
     unix: python -m handler --model taxi_fare_regressor --stage Staging
     supports_http_options: true
+
   Production:
     unix: python -m handler --model taxi_fare_regressor --stage Production
     supports_http_options: true
