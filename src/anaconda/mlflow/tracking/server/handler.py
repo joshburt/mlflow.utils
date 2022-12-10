@@ -43,6 +43,10 @@ if __name__ == "__main__":
     print(args)
 
     # execution command /  --timeout 0
-    cmd: str = f"mlflow server --default-artifact-root data/mlflow/artifacts --artifacts-destination data/mlflow/artifacts --backend-store-uri sqlite:///data/mlflow/store/mydb.sqlite --serve-artifacts --port {args.anaconda_project_port} --host {args.anaconda_project_address}"
+    # https://www.mlflow.org/docs/latest/cli.html#mlflow-server
+
+    cmd: str = (
+        f"mlflow server --serve-artifacts --port {args.anaconda_project_port} --host {args.anaconda_project_address}"
+    )
     print(cmd)
     launch(shell_out_cmd=cmd)

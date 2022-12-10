@@ -1,0 +1,21 @@
+name: mlflow-tracking-server-burt-poc
+description: MLFlow Tracking Server POC
+
+commands:
+  server:
+    unix: python handler.py
+    supports_http_options: true
+  garbagecollection:
+    # https://www.mlflow.org/docs/latest/cli.html#mlflow-gc
+    unix: mlflow gc --older-than 10d0h0m0s
+
+packages:
+    - python=3.9
+    - pip:
+        - mlflow
+
+platforms:
+  - linux-64
+
+env_specs:
+  python_39: {}

@@ -14,7 +14,7 @@ def launch(shell_out_cmd: str) -> None:
 if __name__ == "__main__":
     # arg parser for the standard anaconda-project options
     parser = ArgumentParser(
-        prog="mlflow-tracking-server-launch-wrapper", description="mlflow tracking server launch wrapper"
+        prog="mlflow-model-serving-launch-wrapper", description="mlflow model serving launch wrapper"
     )
 
     parser.add_argument("--anaconda-project-host", action="append", default=[], help="Hostname to allow in requests")
@@ -38,15 +38,19 @@ if __name__ == "__main__":
         help="IP address the application should listen on.",
     )
 
+    parser.add_argument("--model", action="store", help="The name of the registered model to server")
+    parser.add_argument("--stage", action="store", help="The stage of the registered model to server")
+
     args = parser.parse_args(sys.argv[1:])
 
     print(args)
 
-    # execution command /  --timeout 0
-    model_name: str = "taxi_fare_regressor"
-    model_stage: str = "Production"
-    model_uri: str = f"'models:/{model_name}/{model_stage}'"
+    # execution command
+    model_uri: str = f"'models:/{args.model}/{args.stage}'"
+    print(model_uri)
 
-    cmd: str = f"mlflow models serve --model-uri {model_uri} --env-manager conda --port {args.anaconda_project_port} --host {args.anaconda_project_address}"
+    # https://www.mlflow.org/docs/latest/cli.html#mlflow-models-serve
+    cmd: str = f"mlflow models serve --env-manager conda --model-uri {model_uri} --port {args.anaconda_project_port} --host {args.anaconda_project_address}"
+
     print(cmd)
     launch(shell_out_cmd=cmd)

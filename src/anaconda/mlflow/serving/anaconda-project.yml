@@ -1,0 +1,21 @@
+name: mlflow-endpoint-poc
+description: MLFlow Endpoint POC
+
+commands:
+  Staging:
+    unix: python -m handler --model taxi_fare_regressor --stage Staging
+    supports_http_options: true
+  Production:
+    unix: python -m handler --model taxi_fare_regressor --stage Production
+    supports_http_options: true
+
+packages:
+    - python=3.9
+    - pip:
+        - mlflow
+
+platforms:
+  - linux-64
+
+env_specs:
+  python_39: {}
