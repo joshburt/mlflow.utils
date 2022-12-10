@@ -20,9 +20,9 @@ def get_config_for_stage(stage_name: str) -> str:
     if lower_name == "local":
         return "env/.env.local.model.serving"
     if lower_name == "staging":
-        return "env/.env.staging.model.serving"
+        return "env/.env.ae5.staging.model.serving"
     if lower_name == "production":
-        return "env/.env.production.model.serving"
+        return "env/.env.ae5.production.model.serving"
 
     exp_message: str = f"Unknown stage {stage_name} received"
     raise Exception(exp_message)
