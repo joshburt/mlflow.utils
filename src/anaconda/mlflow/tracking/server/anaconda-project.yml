@@ -1,0 +1,32 @@
+name: mlflow-tracking-server
+description: MLFlow Tracking Server
+
+commands:
+  LocalTrackingServer:
+    unix: python -m src.anaconda.mlflow.tracking.server.handler --stage Local
+    supports_http_options: true
+  LocalTrackingServerPruner:
+    unix: python -m src.anaconda.mlflow.tracking.server.pruner --stage Local
+
+  StagingTrackingServer:
+    unix: python -m src.anaconda.mlflow.tracking.server.handler --stage Staging
+    supports_http_options: true
+  StagingTrackingServerPruner:
+    unix: python -m src.anaconda.mlflow.tracking.server.pruner --stage Staging
+
+  ProductionTrackingServer:
+    unix: python -m src.anaconda.mlflow.tracking.server.handler --stage Production
+    supports_http_options: true
+  ProductionTrackingServerPruner:
+    unix: python -m src.anaconda.mlflow.tracking.server.pruner --stage Production
+
+packages:
+    - python=3.9
+    - pip:
+        - mlflow==1.2.0
+
+platforms:
+  - linux-64
+
+env_specs:
+  python_39: {}
